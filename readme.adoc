@@ -1,0 +1,14 @@
+Basic scala collections performance benchmark from Li Haoyi updated for
+scala 2.12
+
+See his https://www.lihaoyi.com/post/BenchmarkingScalaCollections.html[blog post] for 2.11
+
+To run the performance test::
+`sbt "bench/runMain bench.PerfMain [repeat loops]"`
+
+To run the memory test::
+`sbt "bench/runMain bench.MemoryMain"`
+
+=== Added features
+- repetition can be passed as main program argument to PerfMain (defaulted to 7)
+- array and buffer indexing extracted from "lookup" benchmark into: "index"

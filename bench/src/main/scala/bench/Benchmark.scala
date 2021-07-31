@@ -13,6 +13,7 @@ object Benchmark{
   def pair[T](t: => T) = (t, t)
   val nullO: Object = null
   def obj = new Object()
+  val lookupLoops = 10
   val benchmarks = Seq(
     Benchmark(
       "construct",
@@ -24,6 +25,42 @@ object Benchmark{
           i += 1
         }
         b
+      },
+      Case("m.Buffer.toSeq", n=>n){ n =>
+        val b = mutable.Buffer.empty[Object]
+        var i = 0
+        while(i < n){
+          b.append(obj)
+          i += 1
+        }
+        b.toSeq
+      },
+      Case("m.Buffer.toArray", n=>n){ n =>
+        val b = mutable.Buffer.empty[Object]
+        var i = 0
+        while(i < n){
+          b.append(obj)
+          i += 1
+        }
+        b.toArray
+      },
+      Case("m.ListBuffer", n=>n){ n =>
+        val b = mutable.ListBuffer.empty[Object]
+        var i = 0
+        while(i < n){
+          b.append(obj)
+          i += 1
+        }
+        b
+      },
+      Case("m.ListBuffer.toSeq", n=>n){ n =>
+        val b = mutable.ListBuffer.empty[Object]
+        var i = 0
+        while(i < n){
+          b.append(obj)
+          i += 1
+        }
+        b.toSeq
       },
       Case("Vector", n=>n){ n =>
         var b = Vector.empty[Object]
@@ -87,6 +124,15 @@ object Benchmark{
           i += 1
         }
         b.toVector
+      },
+      Case("Array.toBuffer", n=>n){ n =>
+        val b = new Array[Object](n)
+        var i = 0
+        while(i < n){
+          b(i) = obj
+          i += 1
+        }
+        b.toBuffer
       },
       Case("Array.toMap", n=>n){ n =>
         val b = new Array[(Object, Object)](n)
@@ -214,10 +260,10 @@ object Benchmark{
         }
         last
       },
-      Case("List-while", List.fill(_)(obj)){ case a =>
+      Case("List-while", List.fill(_)(obj)){ a =>
         var last = nullO
         var i = 0
-        while(i < 100) {
+        while(i < 10) {
           var j = a
           while(j.nonEmpty){
             last = j.head
@@ -263,10 +309,11 @@ object Benchmark{
         }
         last
       },
-      Case("Array-while", x => x -> Array.fill(x)(obj)){ case (n, a) =>
+      Case("Array-while", x => x -> Array.fill(x)(obj)
+      ){ case (n, a) =>
         var last = nullO
         var i = 0
-        while(i < 100) {
+        while(i < 10) {
           var j = 0
           while(j < n){
             last = a(j)
@@ -279,7 +326,7 @@ object Benchmark{
       Case("m.Buffer", x => mutable.Buffer.fill(x)(obj)){ a =>
         var last = nullO
         var i = 0
-        while(i < 100) {
+        while(i < 10) {
           a.foreach(last = _)
           i += 1
         }
@@ -294,7 +341,8 @@ object Benchmark{
         }
         last
       },
-      Case("m.Map", x => mutable.Map(Array.fill(x)(obj -> obj):_*)){ a =>
+      Case("m.Map", x => mutable.Map(Array.fill(x)(obj -> obj):_*)
+      ){ a =>
         var last = nullO
         var i = 0
         while(i < 10) {
@@ -305,70 +353,9 @@ object Benchmark{
       }
     ),
     Benchmark(
-      "lookup",
-      Case("List", x => x -> List.fill(x)(obj)){ case (n, a) =>
-        var i = 0
-        var last = nullO
-        while(i < 100) {
-          var j = 0
-          while (j < n) {
-            last = a(j)
-            j += 1
-          }
-          i += 1
-        }
-        last
-      },
-      Case("Vector", x => x -> Vector.fill(x)(obj)){ case (n, a) =>
-
-        var last = nullO
-        var i = 0
-        while(i < 100) {
-          var j = 0
-          while (j < n) {
-            last = a(j)
-            j += 1
-          }
-          i += 1
-        }
-        last
-      },
-      Case("Set", x => {
-        val r = Array.fill(x)(obj)
-        r -> r.toSet
-      }){ case (keys, a) =>
-
-        var last = false
-        var i = 0
-        while(i < 100) {
-          var j = 0
-          val n = keys.length
-          while (j < n) {
-            last = a(keys(j))
-            j += 1
-          }
-          i += 1
-        }
-        last
-      },
-      Case("Map", x => {
-        val r = Array.fill(x)(obj -> obj).toMap
-        r.keysIterator.toArray -> r
-      }){ case (keys, a) =>
-        var last = nullO
-        var i = 0
-        while(i < 100) {
-          var j = 0
-          val n = keys.length
-          while (j < n) {
-            last = a(keys(j))
-            j += 1
-          }
-          i += 1
-        }
-        last
-      },
-      Case("Array", x => x -> Array.fill(x)(obj)){ case (n, a) =>
+      "index",
+      Case("Array", x => x -> Array.fill(x)(obj)
+      ){ case (n, a) =>
         var last = nullO
         var i = 0
         while(i < 100) {
@@ -394,13 +381,144 @@ object Benchmark{
         }
         last
       },
+      Case("Vector", x => x -> Vector.fill(x)(obj) ){ case (n, a) =>
+        var last = nullO
+        var i = 0
+        while(i < 100) {
+          var j = 0
+          while (j < n) {
+            last = a(j)
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("List", x => x -> List.fill(x)(obj)){ case (n, a) =>
+        var i = 0
+        var last = nullO
+        while(i < 100) {
+          var j = 0
+          while (j < n) {
+            last = a(j)
+            j += 1
+          }
+          i += 1
+        }
+        last
+      }
+    ),
+    Benchmark(
+      "lookup",
+      Case("List", x => {
+        val r = Array.fill(x)(obj)
+        r -> r.toList
+      }){ case (keys, a) =>
+        var i = 0
+        var last = false
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a.contains(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("Map", x => {
+        val r = Array.fill(x)(obj -> obj).toMap
+        r.keysIterator.toArray -> r
+      }){ case (keys, a) =>
+        var last = nullO
+        var i = 0
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("Vector", x => {
+        val r = Array.fill(x)(obj)
+        r -> r.toVector
+      }){ case (keys, a) =>
+        var i = 0
+        var last = false
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a.contains(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("Array", x => {
+        val r = Array.fill(x)(obj)
+        r -> r
+      }){ case (keys, a) =>
+        var i = 0
+        var last = false
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a.contains(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("m.Buffer", x => {
+        val r = Array.fill(x)(obj)
+        r -> r.toBuffer
+      }){ case (keys, a) =>
+        var i = 0
+        var last = false
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a.contains(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
+      Case("Set", x => {
+        val r = Array.fill(x)(obj)
+        r -> r.toSet
+      }){ case (keys, a) =>
+        var last = false
+        var i = 0
+        while(i < lookupLoops) {
+          var j = 0
+          val n = keys.length
+          while (j < n) {
+            last = a(keys(j))
+            j += 1
+          }
+          i += 1
+        }
+        last
+      },
       Case("m.Set", x => {
         val r = Array.fill(x)(obj)
         r -> r.to[mutable.Set]
       }){ case (keys, a) =>
         var last = false
         var i = 0
-        while(i < 100) {
+        while(i < lookupLoops) {
           val n = keys.length
           var j = 0
           while (j < n) {
@@ -417,7 +535,7 @@ object Benchmark{
       }){ case (keys, a) =>
         var last = nullO
         var i = 0
-        while(i < 100) {
+        while(i < lookupLoops) {
           var j = 0
           val n = keys.length
           while (j < n) {
@@ -430,5 +548,4 @@ object Benchmark{
       }
     )
   )
-
 }

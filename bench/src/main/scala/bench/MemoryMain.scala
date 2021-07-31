@@ -1,6 +1,5 @@
 package bench
-import java.text.NumberFormat
-import java.util.Locale
+import bench.PerfMain.{printRow, sizes}
 
 import scala.collection.immutable.{Queue, Stack}
 import scala.collection.{SortedSet, mutable}
@@ -10,9 +9,9 @@ object MemoryMain{
     def obj = new Object()
     def nums[T](n: Int, f: Int => T) = (0 until n).iterator.map(f)
     val collections = Seq[(String, Int => AnyRef)](
-      ("Vector",          nums(_, _ => obj).toVector),
       ("Array",           nums(_, _ => obj).toArray),
       ("List",            nums(_, _ => obj).toList),
+      ("Vector",          nums(_, _ => obj).toVector),
       ("UnforcedStream",  nums(_, _ => obj).toStream),
       ("ForcedStream",    {n => val x = nums(n, _ => obj).toStream; x.foreach(x => ()); x}),
       ("Set",             nums(_, _ => obj).toSet),
@@ -47,20 +46,12 @@ object MemoryMain{
       ("j.Map",       n => mutable.Map(nums(n, _ => (obj, obj)).toSeq:_*).asJava: java.util.Map[AnyRef, AnyRef]),
       ("j.Set",     nums(_, _ => obj).to[mutable.Set].asJava: java.util.Set[AnyRef])
     )
-    val sizes = Seq(0, 1, 4, 16, 64, 256, 1024, 4069, 16192, 65536, 262144, 1048576)
+
     val results = for((name, factory) <- collections) yield {
       val numbers = for(n <- sizes) yield DeepSize(factory(n))
       (name, numbers)
     }
 
-    def printRow[I: Integral](name: String, items: Seq[I]) = {
-      val width = 15
-      println(
-        name.padTo(width, ' ') +
-        items.map(NumberFormat.getNumberInstance(Locale.US).format)
-             .map(_.reverse.padTo(width, ' ').reverse).mkString
-      )
-    }
     printRow("Size", sizes)
     println()
     for((name, numbers) <- results){
