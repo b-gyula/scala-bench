@@ -2,16 +2,16 @@ package bench
 
 import java.text.{DecimalFormat, NumberFormat}
 import java.util.Locale
-
 import ammonite.ops._
+import bench.Performance.sizes
 
 /**
   * Created by haoyi on 9/26/16.
   */
-object AnalyzeMain {
+object Analyze {
   def main(args: Array[String]): Unit = {
     val results = upickle.default.read[Map[(String, String, Long), Vector[Long]]](
-      read! pwd/'target/"results.json"
+      read! pwd/"target"/"results.json"
     )
     val grouped: Map[String, Map[String, Map[Long, (Long, String)]]] = {
       results.groupBy{case ((bench, coll, size), res) => bench }
@@ -44,23 +44,23 @@ object AnalyzeMain {
     val width = 15
     pprint.pprintln(grouped)
     print("|:" + "-" * width + "-|")
-    for(size <- Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)){
+    for(size <- sizes){
       print("-"*width + ":|")
     }
     println()
     for((bench, items) <- grouped){
       print("| " + " "*width + " |")
-      for(size <- Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)){
+      for(size <- sizes){
         print(" "*width + " |")
       }
       println()
       print("| " +("**"+bench+"**").padTo(width, ' ') + " |")
-      for(size <- Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)){
+      for(size <- sizes){
         print(("**" + NumberFormat.getNumberInstance(Locale.US).format(size) + "**").reverse.padTo(width, ' ').reverse + " |")
       }
       println()
       print("| " + " "*width + " |")
-      for(size <- Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)){
+      for(size <- sizes){
         print(" "*width + " |")
       }
       println()
@@ -69,7 +69,7 @@ object AnalyzeMain {
         print("| ")
         print(coll.padTo(width, ' '))
         print(" |")
-        for(size <- Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)){
+        for(size <- sizes){
           items.get(size) match{
             case Some((mean, stdDev)) =>
 //              val ranges = Seq(

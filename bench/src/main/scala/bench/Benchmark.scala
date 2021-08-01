@@ -7,8 +7,7 @@ case class Benchmark(name: String,
 object Benchmark{
   case class Case[T](name: String,
                      initializer: Int => T)
-                    (callback: T => Any){
-    def run(n: Int) = callback(initializer(n))
+                    (val run: T => Any){
   }
   def pair[T](t: => T) = (t, t)
   val nullO: Object = null
@@ -26,7 +25,16 @@ object Benchmark{
         }
         b
       },
-      Case("m.Buffer.toSeq", n=>n){ n =>
+      Case("m.Buffer", n=>n){ n =>
+        val b = mutable.Buffer.empty[Object]
+        var i = 0
+        while(i < n){
+          b.append(obj)
+          i += 1
+        }
+        b
+      },
+      Case("m.Buffer+toSeq", n=>n){ n =>
         val b = mutable.Buffer.empty[Object]
         var i = 0
         while(i < n){
@@ -35,7 +43,7 @@ object Benchmark{
         }
         b.toSeq
       },
-      Case("m.Buffer.toArray", n=>n){ n =>
+      Case("m.Buffer+toArray", n=>n){ n =>
         val b = mutable.Buffer.empty[Object]
         var i = 0
         while(i < n){
@@ -53,7 +61,7 @@ object Benchmark{
         }
         b
       },
-      Case("m.ListBuffer.toSeq", n=>n){ n =>
+      Case("m.ListBuffer+toSeq", n=>n){ n =>
         val b = mutable.ListBuffer.empty[Object]
         var i = 0
         while(i < n){
@@ -107,7 +115,7 @@ object Benchmark{
         }
         b
       },
-      Case("Array.toSet", n=>n){ n =>
+      Case("Array-pre+toSet", n=>n){ n =>
         val b = new Array[Object](n)
         var i = 0
         while(i < n){
@@ -116,7 +124,7 @@ object Benchmark{
         }
         b.toSet
       },
-      Case("Array.toVector", n=>n){ n =>
+      Case("Array-pre+toVector", n=>n){ n =>
         val b = new Array[Object](n)
         var i = 0
         while(i < n){
@@ -125,7 +133,7 @@ object Benchmark{
         }
         b.toVector
       },
-      Case("Array.toBuffer", n=>n){ n =>
+      Case("Array-pre+toBuffer", n=>n){ n =>
         val b = new Array[Object](n)
         var i = 0
         while(i < n){
@@ -134,7 +142,7 @@ object Benchmark{
         }
         b.toBuffer
       },
-      Case("Array.toMap", n=>n){ n =>
+      Case("Array-pre+toMap", n=>n){ n =>
         val b = new Array[(Object, Object)](n)
         var i = 0
         while(i < n){
@@ -142,15 +150,6 @@ object Benchmark{
           i += 1
         }
         b.toMap
-      },
-      Case("m.Buffer", n=>n){ n =>
-        val b = mutable.Buffer.empty[Object]
-        var i = 0
-        while(i < n){
-          b.append(obj)
-          i += 1
-        }
-        b
       },
       Case("m.Set", n=>n){ n =>
         val b = mutable.Set.empty[Object]

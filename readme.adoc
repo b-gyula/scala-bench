@@ -4,10 +4,14 @@ scala 2.12
 See his https://www.lihaoyi.com/post/BenchmarkingScalaCollections.html[blog post] for 2.11
 
 To run the performance test::
-`sbt "bench/runMain bench.PerfMain [repeat loops]"`
+`sbt "bench/runMain bench.Performance [repeat loops]"`
 
 To run the memory test::
-`sbt "bench/runMain bench.MemoryMain"`
+`sbt "bench/runMain bench.Memory"`
+
+=== Changes
+- do not initialize test case @ each execution
+- do not run initialization for 2sec before test case execution
 
 === Added features
 - repetition can be passed as main program argument to PerfMain (defaulted to 7)

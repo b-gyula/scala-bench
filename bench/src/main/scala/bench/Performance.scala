@@ -1,12 +1,13 @@
 package bench
 
+import bench.Benchmark.Case
+
 import java.text.NumberFormat
 import java.util.Locale
-
-import scala.collection.{SortedSet, mutable}
+import scala.collection.mutable
 import scala.util.control.Exception._
 
-object PerfMain{
+object Performance{
   def calcWidth(i: Int, size: Int) = {
     val maxWidth = 15
     maxWidth - ((size - i).toDouble / size * maxWidth / 2).round.toInt
@@ -50,22 +51,20 @@ object PerfMain{
           val times =
             for(size <- sizes if !(cutoffSizes.getOrElse(key, Int.MaxValue) < size)) yield{
               val buf = output.getOrElseUpdate((benchmark.name, bench.name, size), mutable.Buffer())
-              def handle(run: Boolean) = {
+              def handle[T](bench: Case[T] ) = {
                 System.gc()
-
-                val start = System.currentTimeMillis()
+                val init = bench.initializer(size)
+                val start = System.currentTimeMillis
                 var count = 0
-                while(System.currentTimeMillis() - start < duration){
-                  if (run) bench.run(size)
-                  else bench.initializer(size)
+                while(System.currentTimeMillis - start < duration){
+                  bench.run(init)
                   count += 1
                 }
                 val end = System.currentTimeMillis()
                 (count, end - start)
               }
-              val (initCounts, initTime) = handle(run = false)
-              val (runCounts, runTime) = handle(run = true)
-              val res = ((runTime.toDouble / runCounts - initTime.toDouble / initCounts) * 1000000).toLong
+              val (runCounts, runTime) = handle(bench)
+              val res = ((runTime.toDouble / runCounts) * 1000000).toLong
               buf.append(res)
               if (res > cutoff) {
                 cutoffSizes(key) = math.min(

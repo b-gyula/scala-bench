@@ -1,11 +1,14 @@
 package bench
-import bench.PerfMain.{printRow, sizes}
 
-import scala.collection.immutable.{Queue, Stack}
+import bench.Performance.printRow
+
+import scala.collection.JavaConverters._
+import scala.collection.immutable.Queue
 import scala.collection.{SortedSet, mutable}
-import collection.JavaConverters._
-object MemoryMain{
+
+object Memory{
   def main(args: Array[String]): Unit = {
+    val sizes = Seq(0, 1, 4, 16, 64, 256, 1024, 4096, 16192, 65536, 262144, 1048576)
     def obj = new Object()
     def nums[T](n: Int, f: Int => T) = (0 until n).iterator.map(f)
     val collections = Seq[(String, Int => AnyRef)](
