@@ -1,0 +1,20 @@
+plugins {
+    id 'scala-common-conventions'
+    id 'application'
+    id "com.adtran.scala-multiversion-plugin" version "2.0.4"
+}
+
+version 0.2
+
+dependencies {
+    implementation project(':agent')
+	implementation 'com.lihaoyi:ammonite-ops_%%:2.4.0'
+    implementation 'com.lihaoyi:upickle_%%:1.4.0'
+    implementation 'com.lihaoyi:pprint_%%:0.6.6'
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = project.hasProperty('bench') ? 'bench.' + project.hasProperty('bench')
+            : 'bench.Performance'
+}

@@ -1,0 +1,9 @@
+plugins {
+    id 'scala-common-conventions'
+    id "com.adtran.scala-multiversion-plugin" version "2.0.4"
+}
+version 0.1
+
+dependencies {
+    implementation 'org.scala-lang:scala-library'
+}
