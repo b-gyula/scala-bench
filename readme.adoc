@@ -4,10 +4,18 @@ scala 2.12
 See his https://www.lihaoyi.com/post/BenchmarkingScalaCollections.html[blog post] for 2.11
 
 To run the performance test::
-`sbt "bench/runMain bench.Performance [repeat loops]"`
+`sbt "bench/runMain bench.Performance [repeat loops] [result file]"`
+
+or
+
+`gradle run [repeat loops] [result file]`
 
 To run the memory test::
 `sbt "bench/runMain bench.Memory"`
+
+or
+
+`gradle run -Pbench=Memory
 
 === Changes
 - do not initialize test case @ each execution
@@ -16,3 +24,4 @@ To run the memory test::
 === Added features
 - repetition can be passed as main program argument to PerfMain (defaulted to 7)
 - array and buffer indexing extracted from "lookup" benchmark into: "index"
+- grade build added
