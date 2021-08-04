@@ -2,8 +2,8 @@ package bench
 
 import bench.Performance.printRow
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.jdk.CollectionConverters._
 import scala.collection.{immutable, mutable}
 
 object Memory{

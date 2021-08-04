@@ -2,12 +2,15 @@ package bench
 
 import bench.Benchmark.Case
 
+import java.io.{File, FileOutputStream}
 import java.text.NumberFormat
 import java.util.Locale
 import scala.collection.mutable
 import scala.util.control.Exception._
 
 object Performance{
+	val defaultResultFileName = "results.json"
+
 	def calcWidth(i: Int, size: Int): Int = {
 		val maxWidth = 15
 		maxWidth - ((size - i).toDouble / size * maxWidth / 2).round.toInt
@@ -33,16 +36,16 @@ object Performance{
 		// How many times to repeat each benchmark
 		val repeats: Int = args.headOption.flatMap(a => allCatch.opt{a.toInt}).getOrElse(7)
 
-		val resultFile: String = if(args.size > 1) args(1) else "target/results.json"
+		val resultFileName: String = if(args.size > 1) args(1) else defaultResultFileName
 		// How long each benchmark runs, in millis
 		val duration = 2000
 		// How long a benchmark can run before we stop incrementing it
 		val cutoff = 400 * 1000 * 1000
 
 		val output = mutable.Map.empty[(String, String, Long), mutable.Buffer[Long]]
-		val cutoffSizes = mutable.Map.empty[(String, String), Int]
+		val cutoffSizes = mutable.Map.empty[(Benchmark.Value, String), Int]
 		// Warmups
-		val warmupLoops = 20
+		val warmupLoops = 10
 		val warmupSize = 1024
 		println(s"Warmup...")
 		for(benchmark <- Benchmark.benchmarks){
@@ -67,7 +70,7 @@ object Performance{
 					val key = benchmark.name -> bench.name
 					val times =
 						for(size <- sizes if !(cutoffSizes.getOrElse(key, Int.MaxValue) < size)) yield{
-							val buf = output.getOrElseUpdate((benchmark.name, bench.name, size), mutable.Buffer())
+							val buf = output.getOrElseUpdate((benchmark.name.toString, bench.name, size), mutable.Buffer())
 							def handle[T](bench: Case[T] ) = {
 								System.gc()
 								val init = bench.initializer(size)
@@ -81,7 +84,7 @@ object Performance{
 								(count, end - start)
 							}
 							val (runCounts, runTime) = handle(bench)
-							val res = ((runTime.toDouble / runCounts) * 1000000).toLong
+							val res = (runTime.toDouble * 1000000 / runCounts).toLong
 							buf.append(res)
 							if (res > cutoff) {
 								cutoffSizes(key) = math.min(
@@ -95,11 +98,10 @@ object Performance{
 				}
 			}
 		}
-		import ammonite.ops._
-		write(
-			pwd/RelPath(resultFile),
-			upickle.default.write(output.mapValues(_.toList).toMap)
-		)
+
+		val resultFile = new File(resultFileName)
+		Option(resultFile.getParentFile).foreach(_.mkdirs)
+		upickle.default.writeToOutputStream(output.mapValues(_.toList).toMap, new FileOutputStream(resultFile))
 	}
 }
 

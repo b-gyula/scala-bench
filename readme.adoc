@@ -8,20 +8,25 @@ To run the performance test::
 
 or
 
-`gradle run [repeat loops] [result file]`
+`gradle run --args='<repeat loops> [result file]'`
 
 To run the memory test::
 `sbt "bench/runMain bench.Memory"`
 
 or
 
-`gradle run -Pbench=Memory
+`gradle run -Pbench=Memory`
+
+Note:: gradle run does not find the agent TODO: Fix `applicationDefaultJvmArgs`
 
 === Changes
 - do not initialize test case @ each execution
 - do not run initialization for 2sec before test case execution
+- removed ammonite dependency
 
 === Added features
-- repetition can be passed as main program argument to PerfMain (defaulted to 7)
+- repetition can be passed as main program argument to `Performance` benchmark (defaulted to 7)
 - array and buffer indexing extracted from "lookup" benchmark into: "index"
 - grade build added
+- `Analyze` can take the result file name as command line parameter
+- benchmark case 'Set' 'concat' uses unique values

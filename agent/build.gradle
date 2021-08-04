@@ -1,9 +1,21 @@
 plugins {
-    id 'scala-common-conventions'
+    id 'scala'
+    id 'java-library'
     id "com.adtran.scala-multiversion-plugin" version "2.0.4"
 }
+
 version 0.1
 
+repositories {
+    // Use Maven for resolving dependencies.
+    mavenCentral()
+}
+
 dependencies {
+
+    constraints {
+        implementation 'org.scala-lang:scala-library:%scala-version%'
+    }
+
     implementation 'org.scala-lang:scala-library'
 }

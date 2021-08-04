@@ -2,8 +2,9 @@ package bench
 
 import java.text.{DecimalFormat, NumberFormat}
 import java.util.Locale
-import ammonite.ops._
 import bench.Performance.sizes
+
+import java.io.File
 
 /**
   * Created by haoyi on 9/26/16.
@@ -11,7 +12,7 @@ import bench.Performance.sizes
 object Analyze {
   def main(args: Array[String]): Unit = {
     val results = upickle.default.read[Map[(String, String, Long), Vector[Long]]](
-      read! pwd/"target"/"results.json"
+      new File(args.headOption.getOrElse(Performance.defaultResultFileName))
     )
     val grouped: Map[String, Map[String, Map[Long, (Long, String)]]] = {
       results.groupBy{case ((bench, coll, size), res) => bench }
