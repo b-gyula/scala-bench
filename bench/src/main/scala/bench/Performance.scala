@@ -1,12 +1,12 @@
 package bench
 
-import bench.Benchmark.Case
+import bench.Benchmark.{Case, namesFromString}
+import mainargs.{ParserForMethods, arg, main}
 
+import scala.collection.mutable
 import java.io.{File, FileOutputStream}
 import java.text.NumberFormat
 import java.util.Locale
-import scala.collection.mutable
-import scala.util.control.Exception._
 
 object Performance{
 	val defaultResultFileName = "results.json"
@@ -31,24 +31,31 @@ object Performance{
 	// How large the collections will be in each benchmark
 	val sizes = Seq(4, 16, 64, 256, 512, 1024, 4096, 16192, 65536, 262144, 1048576)
 
-	def main(args: Array[String]): Unit = {
+	@main
+	def run( @arg( short = 'e', doc = "coma separated list of benchmarks to execute. Benchmarks: "
+												+ "build, remove, concat, foreach, index, contains")
+				exec: String = "",
+				@arg(short = 'd', name = "duration", doc = "How long each benchmark runs, in millisecs")
+				duration: Int = 2000,
+				@arg(short = 'r', doc = "How many times to repeat each benchmark")
+				repeat: Int = 7,
+				@arg(short = 'o', doc = "Name of the result file")
+				out: String = defaultResultFileName
+			 ): Unit = {
 
-		// How many times to repeat each benchmark
-		val repeats: Int = args.headOption.flatMap(a => allCatch.opt{a.toInt}).getOrElse(7)
-
-		val resultFileName: String = if(args.size > 1) args(1) else defaultResultFileName
-		// How long each benchmark runs, in millis
-		val duration = 2000
 		// How long a benchmark can run before we stop incrementing it
 		val cutoff = 400 * 1000 * 1000
 
+		val execute = namesFromString(exec)
 		val output = mutable.Map.empty[(String, String, Long), mutable.Buffer[Long]]
 		val cutoffSizes = mutable.Map.empty[(Benchmark.Value, String), Int]
 		// Warmups
 		val warmupLoops = 10
 		val warmupSize = 1024
 		println(s"Warmup...")
-		for(benchmark <- Benchmark.benchmarks){
+		val benchmarks = if(execute.nonEmpty) Benchmark.benchmarks.filter(b=> execute.contains(b.name))
+								else Benchmark.benchmarks
+		for(benchmark <- benchmarks){
 			for (bench <- benchmark.cases){
 				def exec[T](bench: Case[T]): Unit = {
 					val init = bench.initializer(warmupSize)
@@ -62,9 +69,9 @@ object Performance{
 
 		printRow("Size", sizes)
 		// Main loop
-		for(i <- 1 to repeats){
-			println(s"** Run $i / $repeats **")
-			for(benchmark <- Benchmark.benchmarks){
+		for(i <- 1 to repeat){
+			println(s"** Run $i / $repeat **")
+			for(benchmark <- benchmarks){
 				println(s"* ${benchmark.name} *")
 				for (bench <- benchmark.cases){
 					val key = benchmark.name -> bench.name
@@ -99,9 +106,11 @@ object Performance{
 			}
 		}
 
-		val resultFile = new File(resultFileName)
+		val resultFile = new File(out)
 		Option(resultFile.getParentFile).foreach(_.mkdirs)
 		upickle.default.writeToOutputStream(output.mapValues(_.toList).toMap, new FileOutputStream(resultFile))
 	}
+
+	def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
 }
 

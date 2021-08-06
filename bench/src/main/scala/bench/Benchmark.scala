@@ -1,7 +1,7 @@
 package bench
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, Buffer, ListBuffer}
+import scala.collection.mutable.{ArraySeq, ArrayBuffer, ArrayBuilder, Buffer, ListBuffer}
 
 case class Benchmark(name: Benchmark.Value,
 							cases: Benchmark.Case[_]*)
@@ -12,20 +12,27 @@ object Benchmark extends Enumeration {
 							(val run: T => Any) {
 	}
 
+	def namesFromString(s: String) = s.split(',')
+												.map(_.trim)
+												.filter(_.nonEmpty)
+												.map(Benchmark.withName)
+
 	val build, remove, concat, foreach, index, contains = Value
 
 	def pair[T](t: => T) = (t, t)
 
 	val nullO: Object = null
 
-	def obj = new Object()
+	@`inline` def obj = new Object()
 
 	/** Keep object Array for each size */
-	val _objArray: mutable.Map[Int, Array[Object]] = mutable.Map()
+	val _objArray: mutable.Map[Int, ArraySeq[Object]] = mutable.Map()
 
-	def objArray(i: Int): Array[Object] = _objArray.getOrElseUpdate(i, Array.fill(i)(obj))
+	@`inline` def objArray(i: Int): Array[Object] = objs(i).array.asInstanceOf[Array[Object]]
 
-	val containsLoops = 10
+	def objs(i: Int): ArraySeq[Object] = _objArray.getOrElseUpdate(i, ArraySeq.fill(i)(obj))
+
+	val containsLoops = 8
 
 	val foreachLoops = 10
 
@@ -260,22 +267,22 @@ object Benchmark extends Enumeration {
 			}
 		),
 		Benchmark( remove, // All initializers has to create o copy if using objArray
-			Case("List.tail", objArray(_).toList) { a =>
+			Case("List.tail", objs(_).toList) { a =>
 				var x = a
 				while(x.nonEmpty) x = x.tail
 				x
 			},
-			Case("Vector.tail", objArray(_).toVector) { a =>
+			Case("Vector.tail", objs(_).toVector) { a =>
 				var x = a
 				while(x.nonEmpty) x = x.tail
 				x
 			},
-			Case("Vector.init", objArray(_).toVector) { a =>
+			Case("Vector.init", objs(_).toVector) { a =>
 				var x = a
 				while(x.nonEmpty) x = x.init
 				x
 			},
-			Case("Set.-", objArray(_).toSet) { a =>
+			Case("Set.-", objs(_).toSet) { a =>
 				var x = a
 				while(x.nonEmpty) x = x - x.head
 				x
@@ -285,41 +292,41 @@ object Benchmark extends Enumeration {
 				while(x.nonEmpty) x = x.-(x.head._1)
 				x
 			},
-			Case("Array.tail", x => Array(objArray(x):_*)) { a =>
+			Case("Array.tail", x => Array(objs(x):_*)) { a =>
 				var x = a
 				while(x.nonEmpty) x = x.tail
 				x
-			},//									Buffer ++= adds items one by one
-			Case("m.Buffer.remove", x => Buffer( objArray(x).toSeq:_* )) { a =>
+			},//								Buffer ++= adds items one by one
+			Case("m.Buffer.remove", x => Buffer( objs(x):_* )) { a =>
 				while(a.nonEmpty) a.remove(a.length - 1)
 				a
 			},
-			Case("m.Set.remove", x => mutable.Set(objArray(x).toSeq:_*)) { a =>
+			Case("m.Set.remove", x => mutable.Set(objs(x):_*)) { a =>
 				while(a.nonEmpty) a.remove(a.head)
 				a
 			},
-			Case("m.Map.remove", x => mutable.Map(Array.fill(x)(obj -> obj): _*)) { a =>
+			Case("m.Map.remove", x => mutable.Map(Seq.fill(x)(obj -> obj): _*)) { a =>
 				while(a.nonEmpty) a.remove(a.head._1)
 				a
 			}
 		),
 		Benchmark( concat,
-			Case("List", x => pair(objArray(x).toList)){ case (a, b) =>
+			Case("List", x => pair(objs(x).toList)){ case (a, b) =>
 				a ++ b
 			},
-			Case("Vector", x => pair(objArray(x).toVector)) { case (a, b) =>
+			Case("Vector", x => pair(objs(x).toVector)) { case (a, b) =>
 				a ++ b
 			},
-			Case("Set", x => (objArray(x).toSet, Array.fill(x)(obj).toSet)) { case (a, b) =>
+			Case("Set", x => (objs(x).toSet, Array.fill(x)(obj).toSet)) { case (a, b) =>
 				a ++ b
 			},
 			Case("Map", x => pair(Array.fill(x)(obj -> obj).toMap)) { case (a, b) =>
 				a ++ b
 			},
-			Case("Array++", x => pair(Array(objArray(x):_*))) { case (a, b) =>
+			Case("Array++", x => pair(objArray(x))) { case (a, b) =>
 				a ++ b
 			},
-			Case("m.ArraySeq", x => pair(mutable.ArraySeq(objArray(x):_*))) { case (a, b) =>
+			Case("m.ArraySeq", x => pair(objs(x))) { case (a, b) =>
 				a ++ b
 			},
 			Case("Array-arraycopy", x => pair(objArray(x))) { case (a, b) =>
@@ -328,11 +335,11 @@ object Benchmark extends Enumeration {
 				System.arraycopy(b, 0, x, a.length, b.length)
 				x
 			},
-			Case("m.Buffer", x => pair((Buffer() ++= objArray(x)))) { case (a, b) =>
+			Case("m.Buffer", x => pair(Buffer( objs(x):_*) )) { case (a, b) =>
 				a.appendAll(b)
 			},
-			Case("m.Set", x => (mutable.Set() ++= objArray(x)
-									, mutable.Set() ++= Array.fill(x)(obj))) { case (a, b) =>
+			Case("m.Set", x => (mutable.Set( objs(x):_*)
+				, mutable.Set() ++= Array.fill(x)(obj))) { case (a, b) =>
 				a ++= b
 			},
 			Case("m.Map", x => pair(mutable.Map() ++= Array.fill(x)(obj -> obj))) { case (a, b) =>
@@ -340,7 +347,7 @@ object Benchmark extends Enumeration {
 			}
 		),
 		Benchmark( foreach,
-			Case("List", objArray(_).toList) { a =>
+			Case("List", objs(_).toList) { a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -349,7 +356,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("List-while", objArray(_).toList) { a =>
+			Case("List-while", objs(_).toList) { a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -362,7 +369,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("Vector", objArray(_).toVector){ a =>
+			Case("Vector", objs(_).toVector){ a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -371,7 +378,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("Set", objArray(_).toSet) { a =>
+			Case("Set", objs(_).toSet) { a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -411,7 +418,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ArraySeq", x => mutable.ArraySeq(objArray(x):_*)){ a =>
+			Case("m.ArraySeq", objs){ a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -420,7 +427,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.Buffer", x => Buffer(objArray(x):_*)){ a =>
+			Case("m.Buffer", x => Buffer(objs(x):_*)){ a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -429,7 +436,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ArrayBuffer", ArrayBuffer() ++= objArray(_)){ a =>
+			Case("m.ArrayBuffer", x => ArrayBuffer(objs(x):_*)){ a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -438,7 +445,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.Set", x => mutable.Set( objArray(x):_*) ){ a =>
+			Case("m.Set", x => mutable.Set(objs(x):_*)){ a =>
 				var last = nullO
 				var i = 0
 				while(i < foreachLoops) {
@@ -471,7 +478,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ArraySeq", x => x -> mutable.ArraySeq(objArray(x):_*)) { case (n, a) =>
+			Case("m.ArraySeq", x => x -> objs(x)) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -484,7 +491,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ArrayBuffer", x => x -> ArrayBuffer( objArray(x):_*)) { case (n, a) =>
+			Case("m.ArrayBuffer", x => x -> ArrayBuffer( objs(x):_*)) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -497,7 +504,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("Vector", x => x -> objArray(x).toVector) { case (n, a) =>
+			Case("Vector", x => x -> objs(x).toVector) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -510,7 +517,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("List", x => x -> objArray(x).toList) { case (n, a) =>
+			Case("List", x => x -> objs(x).toList) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -523,7 +530,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.Buffer", x => x -> objArray(x).toBuffer) { case (n, a) =>
+			Case("m.Buffer", x => x -> objs(x).toBuffer) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -536,7 +543,7 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ListBuffer", x => x -> ListBuffer( objArray(x):_*)) { case (n, a) =>
+			Case("m.ListBuffer", x => x -> ListBuffer( objs(x):_*)) { case (n, a) =>
 				var last = nullO
 				var i = 0
 				while(i < indexLoops) {
@@ -552,7 +559,7 @@ object Benchmark extends Enumeration {
 		),
 		Benchmark( contains,
 			Case("List", x => {
-				val r = objArray(x)
+				val r = objs(x)
 				r -> r.toList
 			}) { case (keys, a) =>
 				var i = 0
@@ -568,7 +575,7 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("Vector", x => {
-				val r = objArray(x)
+				val r = objs(x)
 				r -> r.toVector
 			}){ case (keys, a) =>
 				var i = 0
@@ -584,8 +591,8 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.ArraySeq", x => {
-				val r = objArray(x)
-				r -> mutable.ArraySeq(objArray(x):_*)
+				val r = objs(x)
+				r -> r
 			}){ case (keys, a) =>
 				var i = 0
 				var last = false
@@ -616,7 +623,7 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.Buffer", x => {
-				val r = objArray(x)
+				val r = objs(x)
 				r -> r.toBuffer
 			}){ case (keys, a) =>
 				var i = 0
@@ -632,8 +639,8 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.ArrayBuffer", x => {
-				val r = objArray(x)
-				r -> ArrayBuffer( r:_*)
+				val r = objs(x)
+				r -> ArrayBuffer( r:_* )
 			}){ case (keys, a) =>
 				var i = 0
 				var last = false
@@ -648,8 +655,8 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.ListBuffer", x => {
-				val r = objArray(x)
-				r -> ListBuffer( r:_*)
+				val r = objs(x)
+				r -> ListBuffer( r:_* )
 			}){ case (keys, a) =>
 				var i = 0
 				var last = false
@@ -664,7 +671,7 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("Set", x => {
-				val r = objArray(x)
+				val r = objs(x)
 				r -> r.toSet
 			}){ case (keys, a) =>
 				var i = 0
@@ -680,8 +687,8 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.Set", x => {
-				val r = objArray(x)
-				r -> mutable.Set(r:_*)
+				val r = objs(x)
+				r -> mutable.Set( r:_* )
 			}){ case (keys, a) =>
 				var i = 0
 				var last = false
@@ -712,7 +719,7 @@ object Benchmark extends Enumeration {
 				last
 			},
 			Case("m.Map", x => {
-				val r = mutable.Map( Array.fill(x)(obj -> obj):_*)
+				val r = mutable.Map(Seq.fill(x)(obj -> obj):_*)
 				r.keysIterator.toArray -> r
 			}){ case (keys, a) =>
 				var i = 0

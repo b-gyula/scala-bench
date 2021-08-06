@@ -9,7 +9,7 @@ val agent = project
      Package.ManifestAttributes( "Premain-Class" -> "agent.Agent" )
   )
 
-version := "0.3"
+version := "0.3.1"
 
 val bench = project
   .dependsOn(agent)
@@ -19,7 +19,8 @@ val bench = project
 
     libraryDependencies ++= Seq(
        "com.lihaoyi" %% "upickle" % "1.4.0",
-       "com.lihaoyi" %% "pprint" % "0.6.6"
+       "com.lihaoyi" %% "pprint" % "0.6.6",
+       "com.lihaoyi" %% "mainargs" % "0.2.1"
     )
     ,javaOptions in run += ("-javaagent:" + (packageBin in (agent, Compile)).value)
     ,scalacOptions ++= Seq("-deprecation")
