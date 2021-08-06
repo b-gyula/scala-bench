@@ -35,6 +35,9 @@ object Performance{
 	def run( @arg( short = 'e', doc = "coma separated list of benchmarks to execute. Benchmarks: "
 												+ "build, remove, concat, foreach, index, contains")
 				exec: String = "",
+				@arg( short = 's', doc = "coma separated list of benchmarks to execute. Benchmarks: "
+												+ "build, remove, concat, foreach, index, contains")
+				skip: String = "",
 				@arg(short = 'd', name = "duration", doc = "How long each benchmark runs, in millisecs")
 				duration: Int = 2000,
 				@arg(short = 'r', doc = "How many times to repeat each benchmark")
@@ -47,14 +50,15 @@ object Performance{
 		val cutoff = 400 * 1000 * 1000
 
 		val execute = namesFromString(exec)
+		val mustSkip = namesFromString(skip)
 		val output = mutable.Map.empty[(String, String, Long), mutable.Buffer[Long]]
 		val cutoffSizes = mutable.Map.empty[(Benchmark.Value, String), Int]
 		// Warmups
 		val warmupLoops = 10
 		val warmupSize = 1024
 		println(s"Warmup...")
-		val benchmarks = if(execute.nonEmpty) Benchmark.benchmarks.filter(b=> execute.contains(b.name))
-								else Benchmark.benchmarks
+		val benchmarks = (if(execute.nonEmpty) Benchmark.benchmarks.filter( b => execute.contains(b.name))
+								else Benchmark.benchmarks) filterNot { b => mustSkip.contains(b.name) }
 		for(benchmark <- benchmarks){
 			for (bench <- benchmark.cases){
 				def exec[T](bench: Case[T]): Unit = {

@@ -606,6 +606,20 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
+			Case("m.ArraySeq.for", x => {
+				val r = objs(x)
+				r -> r
+			}){ case (keys, a) =>
+				var i = 0
+				var last = false
+				while(i < containsLoops) {
+					for( j <- keys) {
+						last = a.contains(j)
+					}
+					i += 1
+				}
+				last
+			},
 			Case("Array", x => {
 				val r = objArray(x)
 				r -> r
