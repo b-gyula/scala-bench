@@ -21,12 +21,7 @@ object Analyze {
             .map{ case (coll, rest) =>
               coll -> rest.groupBy { case ((bench, coll, size), res) => size }
                 .mapValues{ items =>
-                  val divisor = (bench, coll) match{
-                    case ("lookup", _) => 100
-                    case ("foreach", "List-while" | "Array-while" | "m.Buffer") => 100
-                    case ("foreach", _) => 10
-                    case _ => 1
-                  }
+                  val divisor = Benchmark.withName(bench).loops
                   val sorted = items.toVector.flatMap{case ((bench, coll, size), res) => res}.sorted
                   val middling = sorted.drop(1).dropRight(1).map(_ / divisor)
                   val mean = middling.sum / middling.length

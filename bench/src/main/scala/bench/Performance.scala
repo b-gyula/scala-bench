@@ -1,6 +1,6 @@
 package bench
 
-import bench.Benchmark.{Case, namesFromString}
+import bench.Benchmark.{Case, build, typesFromString}
 import mainargs.{ParserForMethods, arg, main}
 
 import scala.collection.mutable
@@ -34,23 +34,23 @@ object Performance{
 	@main
 	def run( @arg( short = 'e', doc = "coma separated list of benchmarks to execute. Benchmarks: "
 												+ "build, remove, concat, foreach, index, contains")
-				exec: String = "",
-				@arg( short = 's', doc = "coma separated list of benchmarks to execute. Benchmarks: "
+				exec: String = ""
+				,@arg( short = 's', doc = "coma separated list of benchmarks to execute. Benchmarks: "
 												+ "build, remove, concat, foreach, index, contains")
-				skip: String = "",
-				@arg(short = 'd', name = "duration", doc = "How long each benchmark runs, in millisecs")
-				duration: Int = 2000,
-				@arg(short = 'r', doc = "How many times to repeat each benchmark")
-				repeat: Int = 7,
-				@arg(short = 'o', doc = "Name of the result file")
+				skip: String = ""
+				,@arg(short = 'd', name = "duration", doc = "How long each benchmark runs, in millisecs")
+				duration: Int = 2000
+				,@arg(short = 'r', doc = "How many times to repeat each benchmark")
+				repeat: Int = 7
+				,@arg(short = 'o', doc = "Name of the result file")
 				out: String = defaultResultFileName
 			 ): Unit = {
 
 		// How long a benchmark can run before we stop incrementing it
 		val cutoff = 400 * 1000 * 1000
 
-		val execute = namesFromString(exec)
-		val mustSkip = namesFromString(skip)
+		val execute = typesFromString(exec)
+		val mustSkip = typesFromString(skip)
 		val output = mutable.Map.empty[(String, String, Long), mutable.Buffer[Long]]
 		val cutoffSizes = mutable.Map.empty[(Benchmark.Value, String), Int]
 		// Warmups
