@@ -9,7 +9,7 @@ val agent = project
      Package.ManifestAttributes( "Premain-Class" -> "agent.Agent" )
   )
 
-version := "0.3.1"
+version := "0.3.2"
 
 val bench = project
   .dependsOn(agent)

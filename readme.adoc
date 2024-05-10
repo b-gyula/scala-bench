@@ -4,11 +4,21 @@ scala 2.12
 See his https://www.lihaoyi.com/post/BenchmarkingScalaCollections.html[blog post] for 2.11
 
 To run the performance test::
-`sbt "bench/runMain bench.Performance [repeat loops] [result file]"`
+`sbt "bench/runMain bench.Performance <Performance parameters>"`
 
 or
 
-`gradle run --args='<repeat loops> [result file]'`
+`gradle run --args='<Performance parameters>'`
+
+```
+<Performance parameters>:
+
+-e --exec <str>  coma separated list of benchmarks to execute. Benchmarks: build, remove, concat, foreach, index, contains
+-s --skip <str>  coma separated list of benchmarks not to execute. Benchmarks: build, remove, concat, foreach, index, contains
+-t --time <int>  How long each benchmark runs, in millisecs
+-l --loop <int>  How many times to repeat each benchmark
+-o --out <str>   Name of the result file
+```
 
 To run the memory test::
 `sbt "bench/runMain bench.Memory"`

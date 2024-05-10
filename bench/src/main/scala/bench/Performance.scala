@@ -1,15 +1,15 @@
 package bench
 
-import bench.Benchmark.{Case, build, typesFromString}
+import bench.Benchmark.{Case, typesFromString}
 import mainargs.{ParserForMethods, arg, main}
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import java.io.{File, FileOutputStream}
 import java.text.NumberFormat
 import java.util.Locale
 
 object Performance{
-	val defaultResultFileName = "results.json"
+	val defaultResultFileName = s"result.$scalaVersion.json"
 
 	def calcWidth(i: Int, size: Int): Int = {
 		val maxWidth = 15
@@ -35,30 +35,30 @@ object Performance{
 	def run( @arg( short = 'e', doc = "coma separated list of benchmarks to execute. Benchmarks: "
 												+ "build, remove, concat, foreach, index, contains")
 				exec: String = ""
-				,@arg( short = 's', doc = "coma separated list of benchmarks to execute. Benchmarks: "
+				,@arg( short = 's', doc = "coma separated list of benchmarks not to execute. Benchmarks: "
 												+ "build, remove, concat, foreach, index, contains")
 				skip: String = ""
-				,@arg(short = 'd', name = "duration", doc = "How long each benchmark runs, in millisecs")
-				duration: Int = 2000
-				,@arg(short = 'r', doc = "How many times to repeat each benchmark")
-				repeat: Int = 7
+				,@arg(short = 't', doc = "How long each benchmark runs, in millisecs")
+				time: Int = 2000
+				,@arg(short = 'l', doc = "How many times to repeat each benchmark")
+				loop: Int = 7
 				,@arg(short = 'o', doc = "Name of the result file")
 				out: String = defaultResultFileName
 			 ): Unit = {
-
 		// How long a benchmark can run before we stop incrementing it
 		val cutoff = 400 * 1000 * 1000
 
 		val execute = typesFromString(exec)
 		val mustSkip = typesFromString(skip)
-		val output = mutable.Map.empty[(String, String, Long), mutable.Buffer[Long]]
-		val cutoffSizes = mutable.Map.empty[(Benchmark.Value, String), Int]
+		val output = m.Map[(String, String, Long), m.Buffer[Long]]()
+		val cutoffSizes = m.Map.empty[(Benchmark.Value, String), Int]
 		// Warmups
 		val warmupLoops = 10
 		val warmupSize = 1024
-		println(s"Warmup...")
+		println(s"$warmupLoops x $warmupSize warmups...")
 		val benchmarks = (if(execute.nonEmpty) Benchmark.benchmarks.filter( b => execute.contains(b.name))
 								else Benchmark.benchmarks) filterNot { b => mustSkip.contains(b.name) }
+		println(s"Run benchmarks:${benchmarks.map(_.name).mkString(", ")} with time: $time ms into: $out")
 		for(benchmark <- benchmarks){
 			for (bench <- benchmark.cases){
 				def exec[T](bench: Case[T]): Unit = {
@@ -71,28 +71,30 @@ object Performance{
 			}
 		}
 
-		printRow("Size", sizes)
 		// Main loop
-		for(i <- 1 to repeat){
-			println(s"** Run $i / $repeat **")
+		for(i <- 1 to loop) {
+			printRow(s"* Run $i / $loop * length:", sizes)
 			for(benchmark <- benchmarks){
-				println(s"* ${benchmark.name} *")
+				println(s"** ${benchmark.name} **")
 				for (bench <- benchmark.cases){
 					val key = benchmark.name -> bench.name
 					val times =
 						for(size <- sizes if !(cutoffSizes.getOrElse(key, Int.MaxValue) < size)) yield{
-							val buf = output.getOrElseUpdate((benchmark.name.toString, bench.name, size), mutable.Buffer())
+							val buf = output.getOrElseUpdate((benchmark.name.toString, bench.name, size), m.Buffer())
 							def handle[T](bench: Case[T] ) = {
 								System.gc()
 								val init = bench.initializer(size)
 								val start = System.currentTimeMillis
 								var count = 0
-								while(System.currentTimeMillis - start < duration){
+								while(System.currentTimeMillis - start < time){
+									var loops = benchmark.name.loops
+									while(loops > 0) {
 									bench.run(init)
+										loops -= 1
+									}
 									count += 1
 								}
-								val end = System.currentTimeMillis
-								(count, end - start)
+								(count, System.currentTimeMillis - start)
 							}
 							val (runCounts, runTime) = handle(bench)
 							val res = (runTime.toDouble * 1000000 / runCounts).toLong
@@ -116,5 +118,12 @@ object Performance{
 	}
 
 	def main(args: Array[String]): Unit = ParserForMethods(this).runOrExit(args)
+
+	def scalaVersion: String = {
+		import java.util.jar.Manifest
+		val inputStream = this.getClass.getResourceAsStream("/META-INF/MANIFEST.MF")
+		val manifest = new Manifest(inputStream)
+		Option(manifest.getMainAttributes.getValue("Scala-Version")).getOrElse("")
+	}
 }
 
