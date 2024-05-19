@@ -20,18 +20,19 @@ object Memory{
 			("Set",             nums(_, _ => obj).toSet),
 			("Map",             nums(_, _ => (obj, obj)).toMap),
 
-			("SortedSet",   immutable.SortedSet[Int]() ++ nums(_, x=>x)),
+			("SortedSet",   immutable.SortedSet[Int]() ++ nums(_, x => x)),
 			("Queue",       immutable.Queue() ++ nums(_, _ => obj) ),
 
-			("m.Buffer",    nums(_, _ => obj).toBuffer),
+			("m.Buffer",		nums(_, _ => obj).toBuffer),
 			("m.ArrayBuffer", ArrayBuffer() ++ nums(_, _ => obj)),
-			("m.ListBuffer", ListBuffer() ++ nums(_, _ => obj)),
-			("m.Map",       mutable.Map() ++ nums(_, _ => (obj, obj))),
-			("m.Set",       mutable.Set() ++ nums(_, _ => obj)),
-			("m.Queue",     mutable.Queue() ++ nums(_, _ => obj)),
-			("m.PriQueue",  mutable.PriorityQueue[Int]() ++ nums(_, x=>x)),
-			("m.Stack",     mutable.Stack() ++ nums(_, _ => obj)),
-			("m.SortedSet", mutable.SortedSet[Int]() ++ nums(_, x=>x)),
+			("m.ListBuffer",	ListBuffer() ++ nums(_, _ => obj)),
+			("m.ArraySeq",		mutable.ArraySeq[Object]() ++ nums(_, _ => obj)),
+			("m.Map",			mutable.Map() ++ nums(_, _ => (obj, obj))),
+			("m.Set",			mutable.Set() ++ nums(_, _ => obj)),
+			("m.Queue",			mutable.Queue() ++ nums(_, _ => obj)),
+			("m.PriQueue",		mutable.PriorityQueue[Int]() ++ nums(_, x => x)),
+			("m.Stack",			mutable.Stack() ++ nums(_, _ => obj)),
+			("m.SortedSet",	mutable.SortedSet[Int]() ++ nums(_, x => x)),
 
 			("String",  "1" * _),
 
@@ -57,10 +58,10 @@ object Memory{
 			(name, numbers)
 		}
 
-		printRow("Size", sizes)
+		printRow("Size", sizes, 13)
 		println()
 		for((name, numbers) <- results){
-			printRow(name, numbers)
+			printRow(name, numbers, 13)
 		}
 	}
 }

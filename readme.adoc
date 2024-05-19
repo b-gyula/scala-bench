@@ -1,42 +1,45 @@
 Basic scala collections performance benchmark from Li Haoyi updated for
-scala 2.12
+scala 2.12, 2.13 and 3.3.1
 
 See his https://www.lihaoyi.com/post/BenchmarkingScalaCollections.html[blog post] for 2.11
 
 To run the performance test::
-`sbt "bench/runMain bench.Performance <Performance parameters>"`
++
+ mill bench <<Performance parameters>>
++
+or `sbt "bench/runMain bench.Performance <<Performance parameters>>"`
 
-or
-
-`gradle run --args='<Performance parameters>'`
-
+<Performance parameters>::
 ```
-<Performance parameters>:
-
--e --exec <str>  coma separated list of benchmarks to execute. Benchmarks: build, remove, concat, foreach, index, contains
--s --skip <str>  coma separated list of benchmarks not to execute. Benchmarks: build, remove, concat, foreach, index, contains
+-e --exec <str>  coma separated list of benchmarks to execute. Benchmarks: build, remove, concat, loop, index, contains
+-s --skip <str>  coma separated list of benchmarks not to execute. Benchmarks: build, remove, concat, loop, index, contains
 -t --time <int>  How long each benchmark runs, in millisecs
 -l --loop <int>  How many times to repeat each benchmark
 -o --out <str>   Name of the result file
 ```
 
 To run the memory test::
-`sbt "bench/runMain bench.Memory"`
-
-or
-
-`gradle run -Pbench=Memory`
-
-Note:: gradle run does not find the agent TODO: Fix `applicationDefaultJvmArgs`
++
+ mill bench.Memory
++
+or `sbt "bench/runMain bench.Memory"`
 
 === Changes
 - do not initialize test case @ each execution
 - do not run initialization for 2sec before test case execution
+- use the same objects for all performance test cases to reduce memory consumption
 - removed ammonite dependency
 
 === Added features
-- repetition can be passed as main program argument to `Performance` benchmark (defaulted to 7)
+- 15+ more benchmark cases
+- New output format for easier javascript parsing
+- loop count can be passed as main program argument to `Performance` benchmark (defaulted to 7)
 - array and buffer indexing extracted from "lookup" benchmark into: "index"
-- grade build added
+- mill and grade build added
 - `Analyze` can take the result file name as command line parameter
 - benchmark case 'Set' 'concat' uses unique values
+- `macros.gs` can be used as AppScript in a Google Sheet to import the results into the active sheet
+    * The first 3 cell of the sheet's first row needs to have a link to the new result files (scala 2.12, 2.13, 3.3 respectively) see: https://docs.google.com/spreadsheets/d/1s3pDnEbORdTodlZSFwfH0DRhvv4AfB3kU0-r1h8zbMA/edit?usp=sharing[Scala collections performance]
+    * `Load_Data` loads the results and sorts the sheet by scala version, benchmark type and size 64 (column 1, 2 and 8)
+    * function `Add_Formatting` calculates the relative difference from the first reference row in row group of the benchmark type then adds conditional formatting for each column in the group
+    * When different sorting is applied, `Add_Formatting` should be called again. (It expects the row to be grouped by the benchmark type)

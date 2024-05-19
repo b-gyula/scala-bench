@@ -40,12 +40,11 @@ object Benchmark extends Enumeration {
 
 	val nullO: Object = null
 
-	@inline def obj = new Object()
+	@`inline` def obj = new Object()
 
 	/** Keep object Array for each size */ // TODO just create one array and use iterator
 	val _objArray: mutable.Map[Int, ArraySeq[Object]] = mutable.Map()
 
-	@inline
 	def objs(i: Int): collection.Seq[Object] = _objArray.getOrElseUpdate(i, ArraySeq.fill(i)(obj))
 	def arraySeq(i: Int) = objs(i).asInstanceOf[ArraySeq[Object]]
 	val _listBuffers = mutable.Map[Int, ListBuffer[Object]]()
@@ -72,30 +71,29 @@ object Benchmark extends Enumeration {
 	val _maps = mutable.Map[Int, Map[Object, Int]]()
 	def map(i: Int) = _maps.getOrElseUpdate(i, objs(i).map(x => x -> 1).toMap)
 
-	@inline def loopFor(it: Iterable[Object]) = {
+	def loopFor(it: Iterable[Object]) = {
 		var last = nullO
 		for(j <- it) {
 			last = j
 		}
 		last
 	}
-	
-	@inline def loopForeach(it: Iterable[Object]) = {
+	def loopForeach(it: Iterable[Object]) = {
 		var last = nullO
 		it.foreach(last = _)
 		last
 	}
 	
-	@inline def loopWhile(it: collection.Seq[Object]) = {
+	def loopWhile(it: collection.Seq[Object]) = {
 		var last = nullO
-		var j = 0
-		while(j < it.length) {
+		var j = it.length
+		while(j >0 ) {
+			j -= 1
 			last = it(j)
-			j += 1
 		}
 		last
 	}
-
+	
 	val benchmarks = Seq(
 		Benchmark( build,
 			Case("List::", n => n) { n =>
@@ -125,7 +123,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.Buffer", n => n) { n =>
+			Case("Buffer", n => n) { n =>
 				val b = Buffer[Object]()
 				var i = 0
 				while(i < n) {
@@ -134,7 +132,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.Buffer.empty", n => n) { n =>
+			Case("Buffer.empty", n => n) { n =>
 				val b = Buffer.empty[Object]
 				var i = 0
 				while(i < n) {
@@ -143,7 +141,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.Buffer+toSeq", n=>n){ n =>
+			Case("Buffer+toSeq", n=>n){ n =>
 				val b = Buffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -152,7 +150,7 @@ object Benchmark extends Enumeration {
 				}
 				b.toSeq
 			},
-			Case("m.Buffer+toArray", n=>n){ n =>
+			Case("Buffer+toArray", n=>n){ n =>
 				val b = Buffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -161,7 +159,7 @@ object Benchmark extends Enumeration {
 				}
 				b.toArray
 			},
-			Case("m.ListBuffer", n => n){ n =>
+			Case("ListBuffer", n => n){ n =>
 				val b = ListBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -170,7 +168,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.ListBuffer+toSeq", n => n ){ n =>
+			Case("ListBuffer+toSeq", n => n ){ n =>
 				val b = ListBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -179,7 +177,7 @@ object Benchmark extends Enumeration {
 				}
 				b.toSeq
 			},
-			Case("m.ListBuffer+toArray", n => n ){ n =>
+			Case("ListBuffer+toArray", n => n ){ n =>
 				val b = ListBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -188,7 +186,7 @@ object Benchmark extends Enumeration {
 				}
 				b.toArray
 			},
-			Case("m.ArrayBuilder", n => n){ n =>
+			Case("ArrayBuilder", n => n){ n =>
 				val b = ArrayBuilder.make[Object]
 				var i = 0
 				while(i < n){
@@ -197,7 +195,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.ArrayBuffer", n => n){ n =>
+			Case("ArrayBuffer", n => n){ n =>
 				val b = ArrayBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -206,7 +204,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.ArrayBuffer(size)", n => n){ n =>
+			Case("ArrayBuffer(size)", n => n){ n =>
 				val b = new ArrayBuffer[Object](n)
 				var i = 0
 				while(i < n){
@@ -223,7 +221,7 @@ object Benchmark extends Enumeration {
 					i += 1
 				}
 				b
-			},/****** Does not compile 2.13 + *********/
+			},
 			Case("m.ArraySeq.update", n => n){ n =>
 				val b = new mutable.ArraySeq[Object](n)
 				var i = 0
@@ -232,7 +230,7 @@ object Benchmark extends Enumeration {
 					i += 1
 				}
 				b
-			},/********/
+			},
 			Case("m.ArraySeq+:", n => n){ n =>
 				var b = mutable.ArraySeq.empty[Object]
 				var i = 0
@@ -242,7 +240,7 @@ object Benchmark extends Enumeration {
 				}
 				b
 			},
-			Case("m.ArrayBuffer+toSeq", n => n ){ n =>
+			Case("ArrayBuffer+toSeq", n => n ){ n =>
 				val b = ArrayBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -251,7 +249,7 @@ object Benchmark extends Enumeration {
 				}
 				b.toSeq
 			},
-			Case("m.ArrayBuffer+toArray", n => n ){ n =>
+			Case("ArrayBuffer+toArray", n => n ){ n =>
 				val b = ArrayBuffer.empty[Object]
 				var i = 0
 				while(i < n){
@@ -369,7 +367,7 @@ object Benchmark extends Enumeration {
 				b
 			}
 		),
-		Benchmark( remove,
+		Benchmark( remove, // All initializers has to create a copy if using objArray
 			Case("List.tail", list) { a =>
 				var x = a
 				while(x.nonEmpty) x = x.tail
@@ -475,7 +473,7 @@ object Benchmark extends Enumeration {
 		Benchmark( loop,
 			Case("List-foreach", list) (loopForeach),
 			Case("List-for", list) (loopFor),
-			Case("List-while-head", list) { a =>
+			Case("List-while", list) { a =>
 				var last = nullO
 				var j = a
 				while(j.nonEmpty) {
@@ -495,7 +493,7 @@ object Benchmark extends Enumeration {
 			Case("Map-foreach", map) (loopForeach),
 			Case("Map-for", map) (loopFor),
 
-			Case("Array-foreach", array) { a =>
+			Case("Array", array) { a =>
 				var last = nullO
 				a.foreach(last = _)
 				last
@@ -510,7 +508,7 @@ object Benchmark extends Enumeration {
 			Case("Array-while", array) { a =>
 				var last = nullO
 				var j = a.length
-				while(j > 0 ) {
+				while(j >0 ) {
 					j -= 1
 					last = a(j)
 				}
@@ -557,7 +555,6 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.ArraySeq-loop", arraySeq) { loopWhile },
 			Case("m.(Array)Buffer", x => x -> arrayBuffer(x)) { case (n, a) =>
 				var last = nullO
 				var j = 0
@@ -605,19 +602,86 @@ object Benchmark extends Enumeration {
 			}
 		),
 		Benchmark( contains,
-			Case("List", x =>
-				objs(x) -> list(x)) { seqContainsIt
+			Case("List-for", x =>
+				objs(x) -> list(x)
+			) { case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
 			},
-			Case("Vector", x =>
-				objs(x) -> vector(x)){ seqContainsIt
+			Case("Vector-for", x =>
+				objs(x) -> vector(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("Vector-foreach", x =>
+				objs(x) -> vector(x)
+			){ case (keys, a) =>
+				var last = false
+				keys.foreach{ key =>
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("Vector-while", x =>
+				objs(x) -> vector(x)
+			){ seqContains },
+			Case("Vector-while-it", x =>
+				objs(x) -> vector(x)
+			){ seqContainsIt },
+			Case("m.ArraySeq-for", x =>
+				objs(x) -> arraySeq(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("m.ArraySeq-foreach", x =>
+				objs(x) -> arraySeq(x)
+			){ case (keys, a) =>
+				var last = false
+				keys.foreach{ key =>
+					last = a.contains(key)
+				}
+				last
 			},
 			Case("m.ArraySeq-while", x =>
-				objs(x) -> arraySeq(x)){ seqContains
+				objs(x) -> arraySeq(x)
+			){  seqContains
 			},
-			Case("m.ArraySeq", x =>
-				objs(x) -> arraySeq(x)){ seqContainsIt
+			Case("m.ArraySeq-while-it", x =>
+				objs(x) -> arraySeq(x)
+			){  seqContainsIt
 			},
-			Case("Array", x =>
+			Case("Array-for", x => {
+				objs(x) -> array(x)
+			}){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("Array-while", x =>
+				objs(x) -> array(x)
+			) { case (keys, a) =>
+				var last = false
+				var j = keys.length
+				while(j > 0 ) {
+					j -= 1
+					last = a.contains(keys(j))
+				}
+				last
+			},
+			Case("Array-while-it", x =>
 				objs(x) -> array(x)
 			) { case (keys, a) =>
 				var last = false
@@ -627,13 +691,84 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.(Array)Buffer", x =>
-				objs(x) -> arrayBuffer(x)){ seqContainsIt
+			Case("Array-foreach", x =>
+				objs(x) -> array(x)
+			) { case (keys, a) =>
+				var last = false
+				keys.foreach { key =>
+					last = a.contains(key)
+				}
+				last
 			},
-			Case("m.ListBuffer", x =>
-				objs(x) -> listBuffer(x)){ seqContainsIt
+			Case("m.(Array)Buffer-foreach", x =>
+				objs(x) -> arrayBuffer(x)
+			){ case (keys, a) =>
+				var last = false
+				keys.foreach { key =>
+					last = a.contains(key)
+				}
+				last
 			},
+
+/*			Case("m.Buffer-for", x =>
+				objs(x) -> buffer(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("m.(Array)Buffer-while", x =>
+				objs(x) -> arrayBuffer(x)
+			){ case (keys, a) =>
+				var last = false
+				var j = keys.length
+				while(j >0 ) {
+					j -= 1
+					last = a.contains(keys(j))
+				}
+				last
+			},
+			Case("m.(Array)Buffer-for", x =>
+				objs(x) -> arrayBuffer(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("m.ListBuffer-for", x =>
+				objs(x) -> listBuffer(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},*/
 			Case("Set", x =>
+				objs(x) -> set(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("Set-while", x =>
+				objs(x) -> set(x)
+			){ case (keys, a) =>
+				var last = false
+				var j = keys.length
+				while(j > 0) {
+					j -= 1
+					last = a.contains(keys(j))
+				}
+				last
+			},
+			Case("Set-while-it", x =>
 				objs(x) -> set(x)
 			){ case (keys, a) =>
 				var last = false
@@ -643,37 +778,80 @@ object Benchmark extends Enumeration {
 				}
 				last
 			},
-			Case("m.Set", x =>
+			Case("Set-whileContains", x =>
+				objs(x) -> set(x)
+			){ setContains },
+			Case("m.Set-while", x =>
 				objs(x) -> mSet(x)
 			){ case (keys, a) =>
 				var last = false
-				val i = keys.iterator
-				while(i.hasNext) {
-					last = a.contains(i.next)
+				var j = keys.length
+				while(j > 0) {
+					j -= 1
+					last = a.contains(keys(j))
 				}
 				last
 			},
+			Case("m.Set-for", x =>
+				objs(x) -> mSet(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("m.Set-whileContains", x =>
+				objs(x) -> mSet(x)
+			){ setContains	},
 			Case("Map", x =>
+				objs(x) -> map(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("m.Map", x =>
+				objs(x) -> mMap(x)
+			){ case (keys, a) =>
+				var last = false
+				for(key <- keys) {
+					last = a.contains(key)
+				}
+				last
+			},
+			Case("Map-while", x =>
 				objs(x) -> map(x)
 			){ case (keys, a) => mapContains(keys,a)
 			},
-			Case("m.Map", x =>
+			Case("m.Map-while", x =>
 				objs(x) -> mMap(x)
 			){ case (keys, a) => mapContains(keys,a)
 			}
 		)
 	)
-
-	@inline def mapContains [T](keys: collection.Seq[Object], a: collection.Map[Object, T]) = {
+	@inline def setContains(p: ( Seq[Object], collection.Set[Object])) = p match { case (keys: Seq[Object], a: collection.Set[Object]) =>
 		var last = false
-		val it = keys.iterator
-		while(it.hasNext) {
-			last = a.contains(it.next)
+		var j = keys.length
+		while(j > 0) {
+			j -= 1
+			last = a.contains(keys(j))
 		}
 		last
 	}
 
-	@inline private def seqContains(p: ( collection.Seq[Object], collection.Seq[Object])) = p match { case (keys, a) =>
+	@inline def mapContains [T](keys: Seq[Object], a: collection.Map[Object, T]) = {
+		var last = false
+		var j = keys.length
+		while(j > 0) {
+			j -= 1
+			last = a.contains(keys(j))
+		}
+		last
+	}
+	@inline private def seqContains(p: ( Seq[Object], collection.Seq[Object])) = p match { case (keys, a) =>
 		var last = false
 		var j = 0
 		while(j < keys.length) {
@@ -682,13 +860,13 @@ object Benchmark extends Enumeration {
 		}
 		last
 	}
-
 	@inline private def seqContainsIt(p: ( Iterable[Object], collection.Seq[Object])) = p match { case (keys, a) =>
 		var last = false
-		val it = keys.iterator
+		var it = keys.iterator
 		while(it.hasNext) {
 			last = a.contains(it.next)
 		}
 		last
 	}
+
 }

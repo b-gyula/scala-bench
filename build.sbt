@@ -1,27 +1,26 @@
-
 val sharedSettings = Seq(
   scalaVersion := "2.12.13"
+  ,version := "0.4"
 )
+
 val agent = project
   .settings(
     sharedSettings,
-    packageOptions in (Compile, packageBin) += 
+    Compile / packageBin / packageOptions +=
      Package.ManifestAttributes( "Premain-Class" -> "agent.Agent" )
   )
-
-version := "0.3.2"
 
 val bench = project
   .dependsOn(agent)
   .settings(
     sharedSettings,
-    fork in run := true,
+     run / fork := true,
 
     libraryDependencies ++= Seq(
        "com.lihaoyi" %% "upickle" % "1.4.0",
        "com.lihaoyi" %% "pprint" % "0.6.6",
        "com.lihaoyi" %% "mainargs" % "0.2.1"
     )
-    ,javaOptions in run += ("-javaagent:" + (packageBin in (agent, Compile)).value)
+    ,run / javaOptions += ("-javaagent:" + (packageBin in (agent, Compile)).value)
     ,scalacOptions ++= Seq("-deprecation")
 )
